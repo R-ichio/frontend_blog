@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .post { border: 1px solid #dfdfdf; padding: 10px; margin: 10px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Blog</h1>
+    <h2>Crear Post</h2>
+    <form id="postForm">
+        <label>Nombre del autor:</label><br>
+        <input type="text" id="nombre_autor" required><br><br>
+        <label>Título:</label><br>
+        <input type="text" id="titulo_post" required><br><br>
+        <label>Contenido:</label><br>
+        <textarea id="contenido_post" rows="5" required></textarea><br><br>
+        <button type="submit">Crear Post</button>
+    </form>
+    <h2>Posts</h2>
+    <div id="postsContainer"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/posts';
+    
+        async function fetchPosts() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Error al obtener los posts');
+                
+                const posts = await response.json();
+                const container = document.getElementById('postsContainer');
+                container.innerHTML = '';
+    
+                posts.forEach(post => {
+                    const postDiv = document.createElement('div');
+                    postDiv.className = 'post';
+                    postDiv.innerHTML = `
+                        <h3>${post.titulo}</h3>
+                        <p><strong>Autor:</strong> ${post.nombre_autor}</p>
+                        <p>${post.contenido}</p>
+                        <p><em>${new Date(post.fecha).toLocaleString()}</em></p>
+                    `;
+                    container.appendChild(postDiv);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar los posts');
+            }
+        }
+    
+        document.getElementById('postForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+    
+            const nombre_autor = document.getElementById('nombre_autor').value;
+            const titulo = document.getElementById('titulo_post').value;
+            const contenido = document.getElementById('contenido_post').value;
+            const fecha = new Date().toISOString();
+    
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre_autor, titulo, contenido, fecha }),
+                });
+    
+                if (response.ok) {
+                    alert('Post creado exitosamente');
+                    fetchPosts();
+                    document.getElementById('postForm').reset();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al crear el post');
+            }
+        });
+    
+        fetchPosts();
+    </script>
+</body>
+</html>
